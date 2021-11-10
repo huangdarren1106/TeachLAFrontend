@@ -1,39 +1,50 @@
-import React from "react";
-import * as fetch from "../../../lib/fetch.js";
-import { Redirect } from "react-router-dom";
+import React, { useState } from 'react';
+// import * as fetch from "../../../lib/fetch.js";
+import ReactModal from 'react-modal';
+import { Redirect } from 'react-router-dom';
 
-import { Button, Container, Row, Col, FormGroup, Label, Input } from "reactstrap";
+import {
+  Button, Container, Row, Col, FormGroup, Label, Input,
+} from 'reactstrap';
 
-import ReactModal from "react-modal";
+const JoinClassModal = (props) => {
+  const [wid, setWid] = useState('');
+  // const [_disableSubmit, setDisableSubmit] = useState("")
+  const [error, setError] = useState('');
+  const [redirect, setRedirect] = useState(false);
 
-class JoinClassModal extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      wid: "",
-      disableSubmit: false,
-      error: "",
-      redirect: false,
-    };
-  }
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {
+  //     wid: "",
+  //     disableSubmit: false,
+  //     error: "",
+  //     redirect: false,
+  //   };
+  // }
 
-  closeModal = () => {
-    if (this.props.onClose && {}.toString.call(this.props.onClose) === "[object Function]") {
-      this.props.onClose();
+  const closeModal = () => {
+    if (props.onClose && {}.toString.call(props.onClose) === '[object Function]') {
+      props.onClose();
     }
 
-    this.setState({
-      wid: "",
-      error: "",
-      disableSubmit: false,
-    });
+    setWid('');
+    setError('');
+    // setDisableSubmit(false)
+
+    // this.setState({
+    //   wid: "",
+    //   error: "",
+    //   disableSubmit: false,
+    // });
   };
 
-  badInput = () => {
-    if (!this.state.wid) {
-      this.setState({
-        error: "Please enter the class code. You should get this from your instructor.",
-      });
+  const badInput = () => {
+    if (!wid) {
+      setError('Please enter the class code. You should get this from your instructor.');
+      // this.setState({
+      //   error: "Please enter the class code. You should get this from your instructor.",
+      // });
       return true;
     }
     // TODO: Check if class code input is formatted correctly
@@ -41,18 +52,18 @@ class JoinClassModal extends React.Component {
     return false;
   };
 
-  onSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
 
-    if (this.badInput()) {
+    if (badInput()) {
       return;
     }
 
-    let data = {
-      uid: this.props.uid,
+    const data = {
+      uid: props.uid,
       // Todo: swap this line back in when BE is fixed
       // wid: this.state.wid,
-      cid: this.state.wid,
+      cid: wid,
     };
 
     try {
@@ -60,8 +71,8 @@ class JoinClassModal extends React.Component {
         .joinClass(data)
         .then((res) => {
           if (!res.ok) {
-            if (res.status == 404) {
-              throw "404";
+            if (res.status === 404) {
+              throw new Error('404');
             } else {
               throw new Error(`Error: Response code is ${res.status}`);
             }
@@ -69,21 +80,28 @@ class JoinClassModal extends React.Component {
           return res.classData;
         })
         .then((json) => {
-          this.props.addStudentClass(json.cid, json || {});
-          this.setState({ redirect: true });
-          this.closeModal();
+          props.addStudentClass(json.cid, json || {});
+          // this.setState({ redirect: true });
+          setRedirect(true);
+          closeModal();
         })
         .catch((err) => {
-          this.setState({
-            disableSubmit: false,
-            error: (err === "404") ?
-              "We couldn't find that class. Please try again!" :
-              "There was a problem joining the class, please try again!",
-          });
-          console.log(err);
+          // setDisableSubmit(false)
+          setError(
+            err === '404'
+              ? "We couldn't find that class. Please try again!"
+              : 'There was a problem joining the class, please try again!',
+          );
+          // this.setState({
+          //   disableSubmit: false,
+          //   error: (err === "404") ?
+          //     "We couldn't find that class. Please try again!" :
+          //     "There was a problem joining the class, please try again!",
+          // });
+          // console.log(err);
         });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
 
     // Testing stuff (do this instead of the try-catch block):
@@ -104,63 +122,60 @@ class JoinClassModal extends React.Component {
     this.closeModal();
 */
     // end of testing stuff
-
-    this.setState({ disableSubmit: true, error: "" });
+    // setDisableSubmit(true)
+    setError('');
+    // this.setState({ disableSubmit: true, error: "" });
   };
 
-  renderModal = () => {
-    return (
-      <ReactModal
-        isOpen={this.props.isOpen}
-        onRequestClose={this.closeModal}
-        className="sketches-modal"
-        overlayClassName="profile-image-overlay"
-        ariaHideApp={false}
-      >
-        <Container>
-          <h1 className="text-center">Join a Class</h1>
-          <hr />
-          <FormGroup row>
-            <Label className="text-right" for="class-code" xs={4}>
-              Enter class code:
-            </Label>
-            <Col xs={8}>
-              <Input
-                className="sketches-modal-input"
-                onChange={(e) => this.setState({ wid: e.target.value })}
-                value={this.state.wid}
-                id="class-code"
-              />
-            </Col>
-          </FormGroup>
-          <br />
-          <div className="text-center text-danger">{this.state.error || <br />}</div>
-          <hr />
-          <Row>
-            <Col>
-              <Button color="danger" onClick={this.closeModal} size="lg" block>
-                Cancel
-              </Button>
-            </Col>
-            <Col>
-              <Button color="success" onClick={this.onSubmit} size="lg" block>
-                Join
-              </Button>
-            </Col>
-          </Row>
-        </Container>
-      </ReactModal>
-    );
-  };
+  const renderModal = () => (
+    <ReactModal
+      isOpen={props.isOpen}
+      onRequestClose={closeModal}
+      className="sketches-modal"
+      overlayClassName="profile-image-overlay"
+      ariaHideApp={false}
+    >
+      <Container>
+        <h1 className="text-center">Join a Class</h1>
+        <hr />
+        <FormGroup row>
+          <Label className="text-right" for="class-code" xs={4}>
+            Enter class code:
+          </Label>
+          <Col xs={8}>
+            <Input
+              className="sketches-modal-input"
+              onChange={(e) => setWid(e.target.value)}
+              value={wid}
+              id="class-code"
+            />
+          </Col>
+        </FormGroup>
+        <br />
+        <div className="text-center text-danger">{error || <br />}</div>
+        <hr />
+        <Row>
+          <Col>
+            <Button color="danger" onClick={closeModal} size="lg" block>
+              Cancel
+            </Button>
+          </Col>
+          <Col>
+            <Button color="success" onClick={onSubmit} size="lg" block>
+              Join
+            </Button>
+          </Col>
+        </Row>
+      </Container>
+    </ReactModal>
+  );
 
-  render() {
-    if (this.state.redirect) {
-      // Need to send them to the right class page
-      return <Redirect to="/class" />;
-    }
-
-    return this.renderModal();
+  if (redirect) {
+    // Need to send them to the right class page
+    return <Redirect to="/class" />;
   }
-}
+
+  return renderModal();
+};
 
 export default JoinClassModal;
